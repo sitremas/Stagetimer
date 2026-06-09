@@ -735,6 +735,7 @@
             <div class="gong-info-title">🔔 Lokální gong při 0:00</div>
             <div class="gong-info-desc">Přehraje zvuk v tomto prohlížeči, když časovač dorazí na nulu</div>
           </div>
+          <button class="btn" id="testGongBtn" style="padding: 8px 12px; font-size: 13px; min-height: 36px;">Test</button>
           <label class="toggle">
             <input type="checkbox" id="gongToggle">
             <span class="toggle-slider"></span>
@@ -1075,31 +1076,38 @@ function handleGong(remainingMs, running) {
     if (remainingMs > 1000) gongPlayed = false;
     return;
   }
-  if (remainingMs <= 0 && remainingMs > -1500 && !gongPlayed) {
+  if (remainingMs <= 0 && remainingMs > -4000 && !gongPlayed) {
     playGong();
     gongPlayed = true;
   }
   if (remainingMs > 1000) gongPlayed = false;
 }
 
+function initAudioContext() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  if (audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+  return audioContext;
+}
+
 function playGong() {
   try {
-    if (!audioContext) {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    // Krátký gong: 2 sinusoidy s ozvěnou
-    const now = audioContext.currentTime;
+    const ctx = initAudioContext();
+    const now = ctx.currentTime;
     [440, 330, 220].forEach((freq, i) => {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
       osc.frequency.value = freq;
       osc.type = 'sine';
       gain.gain.setValueAtTime(0, now + i * 0.05);
-      gain.gain.linearRampToValueAtTime(0.3, now + i * 0.05 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 1.2);
-      osc.connect(gain).connect(audioContext.destination);
+      gain.gain.linearRampToValueAtTime(0.4, now + i * 0.05 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.05 + 1.5);
+      osc.connect(gain).connect(ctx.destination);
       osc.start(now + i * 0.05);
-      osc.stop(now + i * 0.05 + 1.3);
+      osc.stop(now + i * 0.05 + 1.6);
     });
   } catch (e) {
     console.error('Gong error', e);
@@ -1297,12 +1305,13 @@ document.querySelectorAll('[data-add]').forEach(btn => {
 
 document.getElementById('gongToggle').addEventListener('change', () => {
   saveConfig();
-  // Pre-aktivace AudioContextu (uživatelská interakce nutná)
-  if (document.getElementById('gongToggle').checked && !audioContext) {
-    try {
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    } catch (e) {}
+  if (document.getElementById('gongToggle').checked) {
+    initAudioContext();
   }
+});
+
+document.getElementById('testGongBtn').addEventListener('click', () => {
+  playGong();
 });
 
 // MODAL pro přidání časovače
