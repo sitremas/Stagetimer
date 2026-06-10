@@ -6,965 +6,1280 @@
 <title>Stagetimer Ovladač</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg: #0d0f12;
-    --bg-elev: #15191f;
-    --bg-card: #1c2128;
-    --border: #2a2f38;
-    --border-strong: #3a4150;
-    --text: #e6e8eb;
-    --text-dim: #8a92a3;
-    --text-faint: #5b6271;
-    --accent: #4ade80;
-    --accent-dim: #22c55e;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --info: #3b82f6;
-    --radius: 12px;
-    --gap: 12px;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-
-  body {
-    font-family: 'Inter', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-    padding: 12px;
-    font-size: 15px;
-    /* Zabraňuje zoom při double-tapu na mobilu */
-    touch-action: manipulation;
-  }
-
-  .container { max-width: 1400px; margin: 0 auto; }
-
-  /* === HLAVIČKA === */
-  header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    margin-bottom: var(--gap);
-  }
-
-  .logo {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    font-weight: 700;
-    font-size: 16px;
-  }
-
-  .logo-dot {
-    width: 10px; height: 10px;
-    border-radius: 50%;
-    background: var(--accent);
-    box-shadow: 0 0 10px var(--accent);
-    animation: pulse 2s infinite;
-    flex-shrink: 0;
-  }
-
-  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-  .status-indicator {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 10px;
-    background: var(--bg-card);
-    border-radius: 20px;
-    font-size: 12px;
-    color: var(--text-dim);
-    white-space: nowrap;
-  }
-
-  .status-dot {
-    width: 8px; height: 8px;
-    border-radius: 50%;
-    background: var(--text-faint);
-    flex-shrink: 0;
-  }
-  .status-dot.connected { background: var(--accent); }
-  .status-dot.error     { background: var(--danger); }
-
-  /* === CONFIG PANEL === */
-  .config-panel {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    margin-bottom: var(--gap);
-  }
-
-  .config-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-  }
-
-  .config-grid .btn-connect {
-    grid-column: 1 / -1;
-  }
-
-  @media (min-width: 600px) {
-    .config-grid {
-      grid-template-columns: 1fr 1fr auto;
-    }
-    .config-grid .btn-connect {
-      grid-column: auto;
-    }
-  }
-
-  .form-group { display: flex; flex-direction: column; gap: 5px; }
-
-  label {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    color: var(--text-dim);
-    font-weight: 600;
-  }
-
-  input[type="text"], input[type="number"] {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    color: var(--text);
-    padding: 11px 14px;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 15px;
-    transition: border-color 0.2s;
-    width: 100%;
-    /* Zabraňuje iOS zoom při focusu (font musí být ≥16px nebo takhle) */
-    font-size: max(16px, 14px);
-  }
-
-  input[type="text"]:focus, input[type="number"]:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-
-  /* === HLAVNÍ LAYOUT === */
-  .main-grid {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--gap);
-  }
-
-  @media (min-width: 900px) {
-    .main-grid {
-      grid-template-columns: 1fr 360px;
-    }
-  }
-
-  /* === KARTY === */
-  .card {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-  }
-
-  .card + .card { margin-top: var(--gap); }
-
-  .card-title {
-    font-size: 11px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    color: var(--text-dim);
-    font-weight: 600;
-    margin-bottom: 14px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  /* === TIMER DISPLAY === */
-  .timer-display {
-    text-align: center;
-    padding: 20px 16px 16px;
-    background: var(--bg-card);
-    border-radius: 10px;
-    margin-bottom: 14px;
-    border: 1px solid var(--border);
-  }
-
-  .timer-name {
-    font-size: 14px;
-    color: var(--text-dim);
-    margin-bottom: 6px;
-    font-weight: 500;
-    min-height: 18px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .timer-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: clamp(52px, 14vw, 80px);
-    font-weight: 700;
-    letter-spacing: -2px;
-    line-height: 1;
-    color: var(--text);
-    transition: color 0.3s;
-  }
-
-  .timer-value.running { color: var(--accent); }
-  .timer-value.warning { color: var(--warning); }
-  .timer-value.danger  { color: var(--danger); animation: blink 1s infinite; }
-  .timer-value.paused  { color: var(--text-dim); }
-
-  @keyframes blink { 50%{opacity:.5} }
-
-  .timer-meta {
-    margin-top: 10px;
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--text-faint);
-    flex-wrap: wrap;
-  }
-
-  .timer-meta span { display: flex; gap: 5px; }
-  .timer-meta strong { color: var(--text-dim); }
-
-  /* === TRANSPORT TLAČÍTKA === */
-  .transport-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-
-  /* Start/Stop přes celou šířku */
-  .transport-grid .btn-start-stop {
-    grid-column: 1 / -1;
-  }
-
-  /* Na větších obrazovkách 4 vedle sebe */
-  @media (min-width: 480px) {
-    .transport-grid {
-      grid-template-columns: repeat(4, 1fr);
-    }
-    .transport-grid .btn-start-stop {
-      grid-column: auto;
-    }
-  }
-
-  /* === OBECNÉ TLAČÍTKO === */
-  .btn {
-    padding: 14px 12px;
-    border: 1px solid var(--border);
-    background: var(--bg-card);
-    color: var(--text);
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background 0.12s, border-color 0.12s, transform 0.08s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    font-family: inherit;
-    /* Minimální touch target */
-    min-height: 48px;
-    user-select: none;
-  }
-
-  .btn:active { transform: scale(0.96); background: var(--bg-elev); }
-  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
-
-  /* Hover jen na zařízeních s ukazatelem (ne mobil) */
-  @media (hover: hover) {
-    .btn:hover:not(:disabled) {
-      border-color: var(--border-strong);
-      background: var(--bg-elev);
-    }
-  }
-
-  .btn-primary {
-    background: var(--accent);
-    border-color: var(--accent);
-    color: #061a0d;
-    font-size: 16px;
-  }
-  .btn-primary:active { background: var(--accent-dim); }
-
-  .btn-danger  { background: var(--danger);  border-color: var(--danger);  color: #fff; }
-  .btn-warning { background: var(--warning); border-color: var(--warning); color: #1a0e00; }
-  .btn-info    { background: var(--info);    border-color: var(--info);    color: #fff; }
-
-  /* === ÚPRAVA ČASU === */
-  .time-adjust-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 6px;
-  }
-
-  .time-adjust-grid .btn {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 13px;
-    padding: 12px 4px;
-    min-height: 44px;
-  }
-
-  /* === SEZNAM ČASOVAČŮ === */
-  .timer-list {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    /* Na mobilu bez max-height — scrolluje celá stránka */
-  }
-
-  @media (min-width: 900px) {
-    .timer-list { max-height: 520px; overflow-y: auto; }
-    .timer-list::-webkit-scrollbar { width: 5px; }
-    .timer-list::-webkit-scrollbar-track { background: var(--bg-card); border-radius: 3px; }
-    .timer-list::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
-  }
-
-  .timer-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 10px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    transition: border-color 0.15s;
-    cursor: pointer;
-    min-height: 56px;
-  }
-
-  .timer-item.active  { border-color: var(--info);   background: rgba(59,130,246,.07); }
-  .timer-item.running { border-color: var(--accent);  background: rgba(74,222,128,.07); }
-
-  .timer-item-index {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--text-faint);
-    background: var(--bg-elev);
-    min-width: 26px;
-    height: 26px;
-    border-radius: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
-  .timer-item-info { flex: 1; min-width: 0; }
-
-  .timer-item-name {
-    font-weight: 500;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .timer-item-duration {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: var(--text-dim);
-    margin-top: 2px;
-  }
-
-  .timer-item-actions { display: flex; gap: 4px; }
-
-  .icon-btn {
-    width: 36px;
-    height: 36px;
-    border-radius: 6px;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    padding: 0;
-    flex-shrink: 0;
-    transition: color 0.12s, border-color 0.12s;
-  }
-
-  .icon-btn:active { opacity: 0.7; }
-  .icon-btn.delete:active { color: var(--danger); }
-
-  @media (hover: hover) {
-    .icon-btn:hover { color: var(--text); border-color: var(--border-strong); }
-    .icon-btn.delete:hover { color: var(--danger); border-color: var(--danger); }
-  }
-
-  /* === MODAL === */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.75);
-    display: none;
-    align-items: flex-end; /* Na mobilu vyjíždí zdola */
-    justify-content: center;
-    z-index: 100;
-    backdrop-filter: blur(3px);
-    padding: 0;
-  }
-
-  @media (min-width: 600px) {
-    .modal-overlay { align-items: center; padding: 16px; }
-  }
-
-  .modal-overlay.show { display: flex; }
-
-  .modal {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    border-radius: 16px 16px 0 0;
-    padding: 20px 20px 32px;
-    width: 100%;
-    max-width: 480px;
-    /* Animace zdola */
-    animation: slideUp 0.2s ease-out;
-  }
-
-  @media (min-width: 600px) {
-    .modal {
-      border-radius: 16px;
-      padding: 24px;
-      animation: fadeIn 0.15s ease-out;
-    }
-  }
-
-  @keyframes slideUp {
-    from { transform: translateY(100%); }
-    to   { transform: translateY(0); }
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; transform: scale(.97); }
-    to   { opacity: 1; transform: scale(1); }
-  }
-
-  /* Drag handle pro modal na mobilu */
-  .modal::before {
-    content: '';
-    display: block;
-    width: 36px;
-    height: 4px;
-    background: var(--border-strong);
-    border-radius: 2px;
-    margin: 0 auto 16px;
-  }
-  @media (min-width: 600px) { .modal::before { display: none; } }
-
-  .modal-title {
-    font-size: 17px;
-    font-weight: 600;
-    margin-bottom: 16px;
-  }
-
-  .modal-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-
-  .modal-actions {
-    display: flex;
-    gap: 8px;
-    margin-top: 16px;
-  }
-
-  .modal-actions .btn { flex: 1; }
-
-  /* === OUTPUT LINKS === */
-  .output-links { display: flex; flex-direction: column; gap: 8px; }
-
-  .output-link-item {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-  }
-
-  .output-link-name {
-    flex: 1;
-    font-size: 14px;
-    font-weight: 500;
-    min-width: 80px;
-  }
-
-  .output-link-type {
-    font-size: 10px;
-    color: var(--text-faint);
-    text-transform: uppercase;
-    font-weight: 600;
-    padding: 2px 6px;
-    background: var(--bg-elev);
-    border-radius: 4px;
-  }
-
-  .output-link-item .btn {
-    padding: 8px 12px;
-    font-size: 13px;
-    min-height: 36px;
-  }
-
-  /* === GONG === */
-  .gong-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    padding: 12px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: 8px;
-    margin-top: 12px;
-  }
-
-  .gong-info { flex: 1; }
-  .gong-info-title { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
-  .gong-info-desc  { font-size: 12px; color: var(--text-dim); }
-
-  /* === TOGGLE === */
-  .toggle {
-    position: relative;
-    width: 48px; height: 28px;
-    flex-shrink: 0;
-  }
-
-  .toggle input { opacity: 0; width: 0; height: 0; }
-
-  .toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    transition: .2s;
-    border-radius: 28px;
-  }
-
-  .toggle-slider::before {
-    content: '';
-    position: absolute;
-    width: 18px; height: 18px;
-    left: 4px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--text-faint);
-    border-radius: 50%;
-    transition: .2s;
-  }
-
-  .toggle input:checked + .toggle-slider {
-    background: var(--accent);
-    border-color: var(--accent);
-  }
-
-  .toggle input:checked + .toggle-slider::before {
-    transform: translateY(-50%) translateX(20px);
-    background: white;
-  }
-
-  /* === TOAST === */
-  .toast-container {
-    position: fixed;
-    bottom: 16px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    z-index: 200;
-    width: calc(100% - 32px);
-    max-width: 360px;
-    pointer-events: none;
-  }
-
-  .toast {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
-    padding: 12px 16px;
-    border-radius: 10px;
-    font-size: 14px;
-    animation: slideUp 0.2s ease-out;
-    border-left: 3px solid var(--info);
-    pointer-events: auto;
-    text-align: center;
-  }
-
-  .toast.success { border-left-color: var(--accent); }
-  .toast.error   { border-left-color: var(--danger); }
-
-  .empty-state {
-    text-align: center;
-    padding: 20px;
-    color: var(--text-faint);
-    font-size: 13px;
-  }
-
-  .section-actions { display: flex; gap: 6px; }
-
-  .section-btn {
-    background: transparent;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    padding: 5px 10px;
-    border-radius: 6px;
-    font-size: 12px;
-    cursor: pointer;
-    font-weight: 600;
-    transition: all 0.15s;
-    min-height: 30px;
-  }
-
-  @media (hover: hover) {
-    .section-btn:hover { color: var(--text); border-color: var(--border-strong); }
-  }
-
-  .help-text {
-    font-size: 12px;
-    color: var(--text-faint);
-    margin-top: 8px;
-    line-height: 1.5;
-  }
-
-  .help-text a { color: var(--info); text-decoration: none; }
-  .help-text a:hover { text-decoration: underline; }
+:root {
+  --bg:       #0a0b0f;
+  --surface:  #14171f;
+  --surface2: #1b1f2a;
+  --raised:   #222735;
+  --border:   rgba(255,255,255,0.08);
+  --border2:  rgba(255,255,255,0.14);
+  --text:     #f2f4f8;
+  --mut:      #9aa3b2;
+  --mut2:     #646d7d;
+  --accent:   #16e08a;
+  --radius:   16px;
+
+  --c-running: #16e08a;
+  --c-wrap:    #ffb02e;
+  --c-paused:  #5fa8ff;
+  --c-over:    #ff4d5e;
+  --c-idle:    #69748a;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+html, body { height: 100%; }
+
+body {
+  font-family: 'Space Grotesk', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 15px;
+  -webkit-font-smoothing: antialiased;
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+button { font-family: inherit; }
+input::placeholder { color: var(--mut2); }
+
+@keyframes st-ping  { 0%{transform:scale(1);opacity:.7} 80%,100%{transform:scale(2.6);opacity:0} }
+@keyframes st-flash { 50%{opacity:.15} }
+@keyframes st-blink { 50%{opacity:.5} }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 99px; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* === LAYOUT === */
+#app {
+  max-width: 480px;
+  margin: 0 auto;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  background: radial-gradient(120% 80% at 50% -10%, #14181f 0%, #0a0b0f 60%);
+}
+
+/* === CONFIG PANEL (login) === */
+#configPanel {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#configPanel.hidden { display: none; }
+
+.config-box {
+  width: 100%;
+  max-width: 380px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
+  padding: 28px 24px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+
+.form-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--mut2);
+}
+
+.form-input {
+  height: 52px;
+  padding: 0 16px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  outline: none;
+  transition: border-color .2s;
+  width: 100%;
+}
+.form-input:focus { border-color: var(--accent); }
+
+/* === TOP BAR === */
+#topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px 0;
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+
+.logo-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent);
+}
+
+.status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px 6px 10px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--mut);
+  white-space: nowrap;
+  transition: border-color .3s, color .3s;
+}
+
+.status-dot {
+  position: relative;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--mut2);
+  flex-shrink: 0;
+  transition: background .3s;
+}
+.status-dot::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: inherit;
+  opacity: 0;
+}
+.status-dot.live::before { animation: st-ping 1.6s cubic-bezier(0,0,.2,1) infinite; opacity: .7; }
+.status-dot.on  { background: var(--accent); }
+.status-dot.err { background: var(--c-over); }
+
+/* === SCROLLABLE CONTENT === */
+#scrollArea {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 14px 20px 140px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* === HERO CARD === */
+.hero-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 20px 20px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 13px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.hero-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(80% 60% at 50% 0%, var(--state-color, transparent) 0%, transparent 70%);
+  opacity: .11;
+  transition: background .5s ease;
+}
+
+/* === STATE PILL === */
+.state-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 7px 14px 7px 11px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  transition: border-color .4s;
+}
+
+.state-dot {
+  position: relative;
+  display: inline-flex;
+  width: 10px; height: 10px;
+  flex-shrink: 0;
+}
+.state-dot span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+.state-dot .ping {
+  opacity: 0;
+}
+.state-dot .dot {
+  box-shadow: 0 0 10px currentColor;
+}
+.state-dot.animate .ping { animation: st-ping 1.6s cubic-bezier(0,0,.2,1) infinite; }
+
+.state-label {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  white-space: nowrap;
+}
+
+/* === TIMER VALUE === */
+.timer-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: clamp(58px, 18vw, 78px);
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+  transition: color .5s ease;
+  white-space: nowrap;
+}
+
+/* === END TIME === */
+.end-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--mut);
+}
+.end-time svg { flex-shrink: 0; }
+.end-time .val {
+  font-family: 'JetBrains Mono', monospace;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* === PROGRESS BAR === */
+.progress-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 2px;
+}
+.progress-bar-bg {
+  width: 100%;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.07);
+  overflow: hidden;
+}
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width .25s linear, background .5s ease;
+}
+.progress-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12.5px;
+  color: var(--mut2);
+}
+.progress-meta .mono { font-family: 'JetBrains Mono', monospace; }
+
+/* === TAB BAR === */
+.tab-bar {
+  display: flex;
+  gap: 5px;
+  padding: 5px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  flex-shrink: 0;
+}
+
+.tab-btn {
+  flex: 1;
+  height: 54px;
+  border-radius: 13px;
+  border: none;
+  background: transparent;
+  color: var(--mut);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  transition: background .15s, color .15s;
+  user-select: none;
+}
+.tab-btn span { font-size: 11.5px; font-weight: 600; }
+.tab-btn.active {
+  background: var(--raised);
+  color: var(--accent);
+}
+
+/* === PANELS === */
+.panel { display: none; flex-direction: column; gap: 12px; }
+.panel.active { display: flex; }
+
+.panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--mut2);
+  margin-bottom: 2px;
+}
+
+/* === ADJUST GRID === */
+.adjust-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 9px;
+}
+
+.adj-btn {
+  height: 54px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: .2px;
+  border: 1px solid;
+  transition: transform .08s ease;
+  user-select: none;
+}
+.adj-btn:active { transform: scale(.93); }
+.adj-btn.minus {
+  background: rgba(255,255,255,0.04);
+  color: var(--mut);
+  border-color: var(--border);
+}
+.adj-btn.plus {
+  background: rgba(22,224,138,0.12);
+  color: var(--accent);
+  border-color: rgba(22,224,138,0.25);
+}
+
+/* === TRANSPORT (fixed bottom) === */
+#transport {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  padding: 14px 18px 34px;
+  z-index: 10;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  background: linear-gradient(to top, rgba(10,11,15,.97) 62%, rgba(10,11,15,0));
+  border-top: 1px solid var(--border);
+}
+@supports (height: 100dvh) {
+  #transport { padding-bottom: max(34px, env(safe-area-inset-bottom, 20px)); }
+}
+
+.transport-row {
+  display: flex;
+  gap: 10px;
+}
+
+.t-btn {
+  flex: 1;
+  height: 72px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  transition: transform .08s ease, background .15s, box-shadow .15s;
+  user-select: none;
+  font-family: inherit;
+}
+.t-btn:active { transform: scale(.94); }
+.t-btn .t-label { font-size: 12px; font-weight: 600; opacity: .7; letter-spacing: .3px; }
+
+.t-btn.primary {
+  flex: 1.7;
+  height: 88px;
+  border: none;
+  color: #08110c;
+}
+
+/* === TIMER LIST === */
+.timer-list { display: flex; flex-direction: column; gap: 9px; }
+
+.timer-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.timer-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 12px 13px 14px;
+  border-radius: 16px;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  transition: background .15s, border-color .15s;
+}
+.timer-row.is-active {
+  background: rgba(22,224,138,.08);
+  border-color: rgba(22,224,138,.4);
+}
+.timer-row.is-running {
+  background: rgba(22,224,138,.1);
+  border-color: rgba(22,224,138,.6);
+}
+
+.timer-idx {
+  width: 26px; height: 26px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.06);
+  color: var(--mut);
+  font-size: 13px;
+  font-weight: 700;
+  transition: background .15s, color .15s;
+}
+.timer-row.is-active .timer-idx,
+.timer-row.is-running .timer-idx {
+  background: var(--accent);
+  color: #08110c;
+}
+
+.timer-row-info { flex: 1; min-width: 0; }
+.timer-row-name { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.timer-row-sub  { font-size: 12.5px; color: var(--mut2); margin-top: 1px; }
+
+.timer-row-dur {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--mut);
+  font-variant-numeric: tabular-nums;
+  transition: color .15s;
+}
+.timer-row.is-active .timer-row-dur,
+.timer-row.is-running .timer-row-dur { color: var(--accent); }
+
+.icon-btn {
+  width: 30px; height: 30px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--mut2);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: color .15s, border-color .15s;
+}
+.icon-btn:hover { color: var(--text); border-color: var(--border2); }
+.icon-btn.del:hover { color: var(--c-over); border-color: var(--c-over); }
+.icon-btn:active { opacity: .7; }
+
+/* === MSG PANEL === */
+.viewer-preview {
+  border-radius: 16px;
+  padding: 18px;
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #000;
+  border: 1px solid var(--border);
+  position: relative;
+  text-align: center;
+}
+.viewer-preview-label {
+  position: absolute;
+  top: 9px; left: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--mut2);
+  text-transform: uppercase;
+}
+.msg-live {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.2;
+  margin-top: 8px;
+}
+.msg-live.blink { animation: st-flash 1s steps(1,end) infinite; color: #ff4d5e; }
+.msg-placeholder { font-size: 14px; color: var(--mut2); margin-top: 8px; }
+
+.preset-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.preset-btn {
+  padding: 8px 13px;
+  border-radius: 999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid var(--border);
+  color: var(--mut);
+  font-family: inherit;
+  transition: color .15s, border-color .15s;
+}
+.preset-btn:hover { color: var(--text); border-color: var(--border2); }
+.preset-btn:active { opacity: .7; }
+
+.msg-compose { display: flex; gap: 9px; }
+.msg-input {
+  flex: 1;
+  height: 52px;
+  border-radius: 14px;
+  padding: 0 16px;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  outline: none;
+  transition: border-color .2s;
+}
+.msg-input:focus { border-color: var(--accent); }
+
+.msg-flash-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.toggle-track {
+  width: 46px; height: 28px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.12);
+  position: relative;
+  transition: background .2s;
+  flex-shrink: 0;
+}
+.toggle-track.on { background: var(--accent); }
+.toggle-thumb {
+  position: absolute;
+  top: 3px; left: 3px;
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform .2s;
+}
+.toggle-track.on .toggle-thumb { transform: translateX(18px); }
+.toggle-label { font-size: 14.5px; color: var(--text); font-weight: 500; }
+
+/* === LINKS PANEL === */
+.link-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 12px 13px 14px;
+  border-radius: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+}
+.link-icon {
+  width: 34px; height: 34px;
+  border-radius: 9px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(255,255,255,0.05);
+  color: var(--accent);
+}
+.link-info { flex: 1; min-width: 0; }
+.link-name { font-size: 14px; font-weight: 600; }
+.link-url { font-size: 12.5px; color: var(--mut2); font-family: 'JetBrains Mono', monospace; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.link-actions { display: flex; gap: 7px; flex-shrink: 0; }
+.link-btn {
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  transition: all .15s;
+  white-space: nowrap;
+}
+.link-btn.copied { background: rgba(22,224,138,.12); border-color: rgba(22,224,138,.4); color: var(--accent); }
+.link-btn.open-btn { background: rgba(59,130,246,.1); border-color: rgba(59,130,246,.35); color: #5fa8ff; }
+
+/* === MODALS === */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+@media (min-width: 520px) { .modal-overlay { align-items: center; padding: 20px; } }
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 20px 36px;
+  width: 100%;
+  max-width: 440px;
+  animation: slideUp .2s ease-out;
+}
+@media (min-width: 520px) { .modal { border-radius: 20px; padding: 24px; animation: fadeIn .15s ease-out; } }
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes fadeIn  { from{opacity:0;transform:scale(.97)} to{opacity:1;transform:scale(1)} }
+
+.modal::before {
+  content: '';
+  display: block;
+  width: 36px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+@media (min-width: 520px) { .modal::before { display: none; } }
+
+.modal-title { font-size: 17px; font-weight: 700; margin-bottom: 18px; }
+
+.modal-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 14px; }
+.modal-row .form-label { font-size: 10px; }
+
+.modal-actions { display: flex; gap: 8px; margin-top: 16px; }
+.modal-actions .btn { flex: 1; }
+
+/* === BUTTONS === */
+.btn {
+  height: 52px;
+  padding: 0 20px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-family: inherit;
+  transition: background .12s, border-color .12s, transform .08s;
+  user-select: none;
+  white-space: nowrap;
+}
+.btn:active { transform: scale(.96); }
+.btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #08110c;
+}
+.btn.primary:active { background: #12c077; }
+.btn.danger  { background: var(--c-over);  border-color: var(--c-over);  color: #fff; }
+.btn.sm {
+  height: 36px;
+  padding: 0 13px;
+  font-size: 13.5px;
+  border-radius: 10px;
+}
+
+.btn-add-timer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background .15s, border-color .15s;
+}
+.btn-add-timer:hover { background: rgba(255,255,255,.08); border-color: var(--border2); }
+
+/* === TOAST === */
+.toast-wrap {
+  position: fixed;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(100% - 40px);
+  max-width: 360px;
+  pointer-events: none;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-left: 3px solid var(--mut);
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  animation: slideUp .2s ease-out;
+  pointer-events: auto;
+}
+.toast.ok  { border-left-color: var(--accent); }
+.toast.err { border-left-color: var(--c-over); }
+
+/* === GONG SECTION === */
+.gong-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+}
+.gong-info { flex: 1; }
+.gong-info-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+.gong-info-desc  { font-size: 12.5px; color: var(--mut); line-height: 1.4; }
+
+/* === HELP TEXT === */
+.help-text { font-size: 12px; color: var(--mut2); line-height: 1.6; }
+
+/* === EMPTY STATE === */
+.empty { text-align: center; padding: 24px; color: var(--mut2); font-size: 13px; }
 </style>
 </head>
 <body>
-<div class="container">
 
-  <!-- HLAVIČKA -->
-  <header>
+<!-- CONFIG PANEL -->
+<div id="configPanel">
+  <div class="config-box">
+    <div class="config-logo">
+      <div class="logo-dot" style="width:11px;height:11px;border-radius:50%;background:var(--accent);box-shadow:0 0 12px var(--accent)"></div>
+      Stagetimer Ovladač
+    </div>
+    <div class="form-group">
+      <div class="form-label">Room ID</div>
+      <input class="form-input" id="roomId" type="text" placeholder="např. CTA4MT69" autocomplete="off">
+    </div>
+    <div class="form-group">
+      <div class="form-label">API klíč</div>
+      <input class="form-input" id="apiKey" type="text" placeholder="váš API klíč" autocomplete="off">
+    </div>
+    <button class="btn primary" id="connectBtn" style="width:100%">Připojit</button>
+    <div class="help-text">Údaje získáte v Stagetimer → menu → „API".</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- TOP BAR -->
+  <div id="topBar">
     <div class="logo">
       <div class="logo-dot"></div>
-      <span>Stagetimer Ovladač</span>
+      Stagetimer
     </div>
-    <div class="status-indicator">
+    <div class="status-pill" id="statusPill">
       <div class="status-dot" id="statusDot"></div>
       <span id="statusText">Neaktivní</span>
     </div>
-  </header>
+  </div>
 
-  <!-- NASTAVENÍ -->
-  <div class="config-panel">
-    <div class="config-grid">
-      <div class="form-group">
-        <label for="roomId">Room ID</label>
-        <input type="text" id="roomId" placeholder="např. 6ADP4P5U" autocomplete="off">
+  <!-- SCROLL AREA -->
+  <div id="scrollArea">
+
+    <!-- HERO CARD -->
+    <div class="hero-card" id="heroCard">
+      <div class="hero-glow" id="heroGlow"></div>
+
+      <div class="state-pill" id="statePill">
+        <div class="state-dot" id="stateDot">
+          <span class="ping" id="statePing" style="background:var(--c-idle)"></span>
+          <span class="dot"  id="stateDotInner" style="background:var(--c-idle);color:var(--c-idle)"></span>
+        </div>
+        <span class="state-label" id="stateLabel" style="color:var(--c-idle)">Připraveno</span>
       </div>
-      <div class="form-group">
-        <label for="apiKey">API klíč</label>
-        <input type="text" id="apiKey" placeholder="váš API klíč" autocomplete="off">
+
+      <div class="timer-value" id="timerValue" style="color:var(--c-idle)">00:00:00</div>
+
+      <div class="end-time" id="endTimeEl">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M6 21V4"/><path d="M6 4h11l-2 4 2 4H6"/>
+        </svg>
+        skončí v <span class="val" id="endTimeVal">—</span>
       </div>
-      <button class="btn btn-primary btn-connect" id="connectBtn">Připojit</button>
+
+      <div class="progress-wrap">
+        <div class="progress-bar-bg">
+          <div class="progress-bar-fill" id="progressFill" style="width:0%;background:var(--c-idle)"></div>
+        </div>
+        <div class="progress-meta">
+          <span id="timerName">— Žádný časovač —</span>
+          <span class="mono" id="timerDuration">—</span>
+        </div>
+      </div>
     </div>
-    <div class="help-text">
-      Údaje získáte v Stagetimer controller stránce → menu → "API". Údaje se ukládají pouze ve vašem prohlížeči.
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="adjust">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h8M17 8h2M5 16h2M11 16h8"/><circle cx="15" cy="8" r="2.2"/><circle cx="9" cy="16" r="2.2"/></svg>
+        <span>Úprava</span>
+      </button>
+      <button class="tab-btn" data-tab="msg">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-4 3.5V16H4z"/></svg>
+        <span>Zprávy</span>
+      </button>
+      <button class="tab-btn" data-tab="list">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6h11M9 12h11M9 18h11"/><path d="M4 6h.01M4 12h.01M4 18h.01" stroke-width="2.6"/></svg>
+        <span>Seznam</span>
+      </button>
+      <button class="tab-btn" data-tab="links">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5l5-5"/><path d="M8 11l-2 2a3 3 0 0 0 4.2 4.2l2-2"/><path d="M16 13l2-2a3 3 0 0 0-4.2-4.2l-2 2"/></svg>
+        <span>Odkazy</span>
+      </button>
+    </div>
+
+    <!-- PANEL: ADJUST -->
+    <div class="panel active" id="panel-adjust">
+      <div class="panel-title">Úprava času</div>
+      <div class="adjust-grid">
+        <button class="adj-btn minus" data-add="-10s">−10 s</button>
+        <button class="adj-btn minus" data-add="-30s">−30 s</button>
+        <button class="adj-btn minus" data-add="-1m">−1 m</button>
+        <button class="adj-btn minus" data-add="-5m">−5 m</button>
+        <button class="adj-btn plus"  data-add="+10s">+10 s</button>
+        <button class="adj-btn plus"  data-add="+30s">+30 s</button>
+        <button class="adj-btn plus"  data-add="+1m">+1 m</button>
+        <button class="adj-btn plus"  data-add="+5m">+5 m</button>
+      </div>
+
+      <!-- GONG -->
+      <div class="gong-section" style="margin-top:4px">
+        <div class="gong-info">
+          <div class="gong-info-title">🔔 Lokální gong při 0:00</div>
+          <div class="gong-info-desc">Přehraje zvuk v tomto prohlížeči</div>
+        </div>
+        <button class="btn sm" id="testGongBtn" style="flex-shrink:0">Test</button>
+        <div class="msg-flash-toggle" id="gongToggleWrap">
+          <div class="toggle-track" id="gongTrack">
+            <div class="toggle-thumb"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PANEL: MESSAGES -->
+    <div class="panel" id="panel-msg">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="panel-title">Zpráva pro řečníka</div>
+        <button id="clearMsgBtn" class="btn sm danger" style="display:none">Skrýt</button>
+      </div>
+
+      <div class="viewer-preview">
+        <span class="viewer-preview-label">Náhled zobrazovače</span>
+        <div id="msgLiveEl" class="msg-placeholder">Žádná aktivní zpráva</div>
+      </div>
+
+      <div class="preset-list">
+        <button class="preset-btn">Zbývá 1 minuta</button>
+        <button class="preset-btn">Prosím zrychli</button>
+        <button class="preset-btn">Skvělé, pokračuj</button>
+        <button class="preset-btn">Čas vypršel</button>
+        <button class="preset-btn">Děkujeme!</button>
+      </div>
+
+      <div class="msg-compose">
+        <input class="msg-input" id="msgInput" type="text" placeholder="Napiš zprávu…">
+        <button class="btn primary" id="sendMsgBtn" style="width:56px;padding:0;flex-shrink:0;border-radius:14px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l15-7-7 15-2.5-5.5z"/></svg>
+        </button>
+      </div>
+
+      <div class="msg-flash-toggle" id="flashToggleWrap">
+        <div class="toggle-track" id="flashTrack">
+          <div class="toggle-thumb"></div>
+        </div>
+        <span class="toggle-label">Blikání + červené zvýraznění</span>
+      </div>
+    </div>
+
+    <!-- PANEL: TIMER LIST -->
+    <div class="panel" id="panel-list">
+      <div class="timer-list-header">
+        <div class="panel-title">Plán časovačů</div>
+        <button class="btn-add-timer" id="addTimerBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+          Přidat
+        </button>
+      </div>
+      <div class="timer-list" id="timerList">
+        <div class="empty">Po připojení se zobrazí seznam.</div>
+      </div>
+    </div>
+
+    <!-- PANEL: LINKS -->
+    <div class="panel" id="panel-links">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div class="panel-title">Odkazy pro zobrazovač</div>
+        <button class="btn sm" id="loadLinksBtn">↻ Načíst</button>
+      </div>
+      <div id="outputLinks">
+        <div class="empty">Klikněte na ↻ Načíst.</div>
+      </div>
+    </div>
+
+  </div><!-- /scrollArea -->
+
+  <!-- FIXED TRANSPORT -->
+  <div id="transport">
+    <div class="transport-row">
+      <button class="t-btn" id="prevBtn">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M18 5.5v13l-9-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M6 5.5v13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <span class="t-label">Předchozí</span>
+      </button>
+      <button class="t-btn primary" id="startStopBtn" style="background:var(--accent);box-shadow:0 8px 26px rgba(22,224,138,.35)">
+        <svg width="36" height="36" viewBox="0 0 24 24" id="playIcon"><path d="M7 4.5l13 7.5-13 7.5z" fill="#08110c" stroke="#08110c" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        <span class="t-label" id="startStopLabel" style="color:#08110c;opacity:.8">Start</span>
+      </button>
+      <button class="t-btn" id="resetBtn">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M3.5 3.5v3.2h3.2"/></svg>
+        <span class="t-label">Reset</span>
+      </button>
+      <button class="t-btn" id="nextBtn">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M6 5.5v13l9-6.5z" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><path d="M18 5.5v13" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        <span class="t-label">Další</span>
+      </button>
     </div>
   </div>
 
-  <!-- HLAVNÍ MŘÍŽKA -->
-  <div class="main-grid">
+</div><!-- /app -->
 
-    <!-- LEVÝ SLOUPEC: AKTIVNÍ ČASOVAČ + OVLÁDÁNÍ -->
-    <div>
-
-      <!-- ČASOVAČ DISPLAY -->
-      <div class="card">
-        <div class="card-title">
-          <span>Aktuální časovač</span>
-          <div class="section-actions">
-            <button class="section-btn" id="refreshBtn" title="Načíst znovu">↻ Obnovit</button>
-          </div>
-        </div>
-
-        <div class="timer-display">
-          <div class="timer-name" id="currentTimerName">— Žádný časovač —</div>
-          <div class="timer-value paused" id="timerValue">00:00:00</div>
-          <div class="timer-meta">
-            <span><strong>Stav:</strong> <span id="timerState">—</span></span>
-            <span><strong>Trvání:</strong> <span id="timerDuration">—</span></span>
-          </div>
-        </div>
-
-        <!-- TRANSPORT TLAČÍTKA -->
-        <div class="transport-grid">
-          <button class="btn" id="prevBtn">⏮ Předchozí</button>
-          <button class="btn btn-primary btn-start-stop" id="startStopBtn">▶ Start / ⏸ Pauza</button>
-          <button class="btn" id="resetBtn">↺ Reset</button>
-          <button class="btn" id="nextBtn">Další ⏭</button>
-        </div>
-
-        <!-- ÚPRAVA ČASU -->
-        <div class="card-title" style="margin-top: 20px;">
-          <span>Úprava času</span>
-        </div>
-        <div class="time-adjust-grid">
-          <button class="btn" data-add="-1m">−1 min</button>
-          <button class="btn" data-add="-30s">−30 s</button>
-          <button class="btn" data-add="+30s">+30 s</button>
-          <button class="btn" data-add="+1m">+1 min</button>
-          <button class="btn" data-add="-5m">−5 min</button>
-          <button class="btn" data-add="-10s">−10 s</button>
-          <button class="btn" data-add="+10s">+10 s</button>
-          <button class="btn" data-add="+5m">+5 min</button>
-        </div>
-
-        <!-- GONG ZVUK (LOKÁLNÍ) -->
-        <div class="gong-section">
-          <div class="gong-info">
-            <div class="gong-info-title">🔔 Lokální gong při 0:00</div>
-            <div class="gong-info-desc">Přehraje zvuk v tomto prohlížeči, když časovač dorazí na nulu</div>
-          </div>
-          <button class="btn" id="testGongBtn" style="padding: 8px 12px; font-size: 13px; min-height: 36px;">Test</button>
-          <label class="toggle">
-            <input type="checkbox" id="gongToggle">
-            <span class="toggle-slider"></span>
-          </label>
-        </div>
-        <div class="help-text">
-          ℹ️ Pozn.: Vestavěný gong Stagetimeru se zapíná přímo v aplikaci Stagetimer (v nastavení časovače → Wrap-up actions).
-          Tento přepínač přehraje zvuk lokálně v ovladači a je užitečný, pokud nemáte zobrazovač u sebe.
-        </div>
-      </div>
-
-      <!-- VIEWER URL -->
-      <div class="card" style="margin-top: 16px;">
-        <div class="card-title">
-          <span>📺 URL pro zobrazovač</span>
-          <div class="section-actions">
-            <button class="section-btn" id="loadLinksBtn">↻ Načíst odkazy</button>
-          </div>
-        </div>
-        <div class="output-links" id="outputLinks">
-          <div class="empty-state">Po připojení se zde zobrazí odkazy pro zobrazovač.</div>
-        </div>
-      </div>
-
-    </div>
-
-    <!-- PRAVÝ SLOUPEC: SEZNAM ČASOVAČŮ -->
-    <div>
-      <div class="card">
-        <div class="card-title">
-          <span>Seznam časovačů</span>
-          <div class="section-actions">
-            <button class="section-btn" id="addTimerBtn">+ Přidat</button>
-          </div>
-        </div>
-        <div class="timer-list" id="timerList">
-          <div class="empty-state">Po připojení se zde zobrazí seznam časovačů.</div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- MODAL PRO PŘIDÁNÍ ČASOVAČE -->
+<!-- MODAL: PŘIDAT ČASOVAČ -->
 <div class="modal-overlay" id="addTimerModal">
   <div class="modal">
     <div class="modal-title">Přidat časovač</div>
-    <div class="form-group" style="margin-bottom: 16px;">
-      <label for="newTimerName">Název</label>
-      <input type="text" id="newTimerName" placeholder="např. Úvod, Přestávka...">
+    <div class="form-group" style="margin-bottom:16px">
+      <div class="form-label">Název</div>
+      <input class="form-input" id="newTimerName" type="text" placeholder="např. Úvod, Přestávka…">
     </div>
-    <label>Doba trvání</label>
+    <div class="form-label" style="margin-bottom:8px">Doba trvání</div>
     <div class="modal-row">
       <div class="form-group">
-        <label for="newTimerHours" style="font-size: 10px;">Hodiny</label>
-        <input type="number" id="newTimerHours" min="0" max="23" value="0">
+        <div class="form-label">Hodiny</div>
+        <input class="form-input" id="newTimerHours"   type="number" min="0" max="23" value="0">
       </div>
       <div class="form-group">
-        <label for="newTimerMinutes" style="font-size: 10px;">Minuty</label>
-        <input type="number" id="newTimerMinutes" min="0" max="59" value="5">
+        <div class="form-label">Minuty</div>
+        <input class="form-input" id="newTimerMinutes" type="number" min="0" max="59" value="5">
       </div>
       <div class="form-group">
-        <label for="newTimerSeconds" style="font-size: 10px;">Sekundy</label>
-        <input type="number" id="newTimerSeconds" min="0" max="59" value="0">
+        <div class="form-label">Sekundy</div>
+        <input class="form-input" id="newTimerSeconds" type="number" min="0" max="59" value="0">
       </div>
     </div>
-    <div class="form-group" style="margin-bottom: 12px;">
-      <label for="newTimerSpeaker">Speaker (volitelné)</label>
-      <input type="text" id="newTimerSpeaker" placeholder="jméno přednášejícího">
+    <div class="form-group" style="margin-bottom:14px">
+      <div class="form-label">Speaker (volitelné)</div>
+      <input class="form-input" id="newTimerSpeaker" type="text" placeholder="jméno přednášejícího">
     </div>
     <div class="modal-actions">
       <button class="btn" id="cancelAddBtn">Zrušit</button>
-      <button class="btn btn-primary" id="confirmAddBtn">Vytvořit</button>
+      <button class="btn primary" id="confirmAddBtn">Vytvořit</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL PRO ÚPRAVU ČASOVAČE -->
+<!-- MODAL: UPRAVIT ČASOVAČ -->
 <div class="modal-overlay" id="editTimerModal">
   <div class="modal">
     <div class="modal-title">Upravit časovač</div>
     <input type="hidden" id="editTimerId">
-    <div class="form-group" style="margin-bottom: 16px;">
-      <label for="editTimerName">Název</label>
-      <input type="text" id="editTimerName" placeholder="název časovače">
+    <div class="form-group" style="margin-bottom:16px">
+      <div class="form-label">Název</div>
+      <input class="form-input" id="editTimerName" type="text" placeholder="název časovače">
     </div>
-    <label>Doba trvání</label>
+    <div class="form-label" style="margin-bottom:8px">Doba trvání</div>
     <div class="modal-row">
       <div class="form-group">
-        <label for="editTimerHours" style="font-size: 10px;">Hodiny</label>
-        <input type="number" id="editTimerHours" min="0" max="23" value="0">
+        <div class="form-label">Hodiny</div>
+        <input class="form-input" id="editTimerHours"   type="number" min="0" max="23" value="0">
       </div>
       <div class="form-group">
-        <label for="editTimerMinutes" style="font-size: 10px;">Minuty</label>
-        <input type="number" id="editTimerMinutes" min="0" max="59" value="0">
+        <div class="form-label">Minuty</div>
+        <input class="form-input" id="editTimerMinutes" type="number" min="0" max="59" value="0">
       </div>
       <div class="form-group">
-        <label for="editTimerSeconds" style="font-size: 10px;">Sekundy</label>
-        <input type="number" id="editTimerSeconds" min="0" max="59" value="0">
+        <div class="form-label">Sekundy</div>
+        <input class="form-input" id="editTimerSeconds" type="number" min="0" max="59" value="0">
       </div>
     </div>
-    <div class="form-group" style="margin-bottom: 12px;">
-      <label for="editTimerSpeaker">Speaker (volitelné)</label>
-      <input type="text" id="editTimerSpeaker" placeholder="jméno přednášejícího">
+    <div class="form-group" style="margin-bottom:12px">
+      <div class="form-label">Speaker (volitelné)</div>
+      <input class="form-input" id="editTimerSpeaker" type="text" placeholder="jméno přednášejícího">
     </div>
-    <div class="form-group" style="margin-bottom: 12px;">
-      <label for="editTimerNotes">Poznámka (volitelné)</label>
-      <input type="text" id="editTimerNotes" placeholder="poznámka">
-    </div>
-    <div class="help-text" style="margin-bottom: 8px;">
-      ℹ️ Pokud časovač právě běží, změna doby se projeví po jeho restartu.
+    <div class="form-group" style="margin-bottom:12px">
+      <div class="form-label">Poznámka (volitelné)</div>
+      <input class="form-input" id="editTimerNotes" type="text" placeholder="poznámka">
     </div>
     <div class="modal-actions">
       <button class="btn" id="cancelEditBtn">Zrušit</button>
-      <button class="btn btn-primary" id="confirmEditBtn">Uložit</button>
+      <button class="btn primary" id="confirmEditBtn">Uložit</button>
     </div>
   </div>
 </div>
 
-<!-- TOAST KONTEJNER -->
-<div class="toast-container" id="toastContainer"></div>
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
 
 <script>
 // === KONFIGURACE ===
-// ⚠️ ZDE VYPLŇTE SVÉ ÚDAJE NATVRDO — pokud jsou vyplněné, přihlašovací panel se skryje
-// Pokud chcete přihlašování ručně, nechte prázdné stringy ''
 const HARDCODED_ROOM_ID = 'CTA4MT69';
 const HARDCODED_API_KEY = '9cb5b46a28d55eec3a8295334d267e1f';
 
 const API_BASE = 'https://api.stagetimer.io/v1';
-let roomId = '';
-let apiKey = '';
+let roomId = '', apiKey = '';
 let connected = false;
 let currentStatus = null;
 let currentTimers = [];
 let pollInterval = null;
 let countdownInterval = null;
-let lastNegativeCheck = 0;
 let gongPlayed = false;
+let gongEnabled = false;
 let audioContext = null;
+let msgFlash = true;
+let liveMsgText = null;
 
-// === ULOŽENÍ NASTAVENÍ DO LOCALSTORAGE ===
+// === STATE COLORS ===
+const STATE = {
+  idle:    { color: '#69748a', label: 'Připraveno',              animate: false },
+  running: { color: '#16e08a', label: 'Běží',                   animate: true  },
+  wrap:    { color: '#ffb02e', label: 'Do konce méně než minuta', animate: true  },
+  paused:  { color: '#5fa8ff', label: 'Pozastaveno',             animate: false },
+  over:    { color: '#ff4d5e', label: 'Přetažení času',          animate: true  },
+};
+
+// === HELPERS ===
+function pad(n) { return String(n).padStart(2, '0'); }
+
+function formatTime(ms) {
+  const neg = ms < 0;
+  let s = Math.floor(Math.abs(ms) / 1000);
+  const h = Math.floor(s / 3600); s -= h * 3600;
+  const m = Math.floor(s / 60);   s -= m * 60;
+  return (neg ? '+' : '') + `${pad(h)}:${pad(m)}:${pad(s)}`;
+}
+
+function formatDuration(t) {
+  return `${pad(t.hours||0)}:${pad(t.minutes||0)}:${pad(t.seconds||0)}`;
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// === CONFIG PERSIST ===
 function saveConfig() {
   try {
-    localStorage.setItem('st_room_id', roomId);
-    localStorage.setItem('st_api_key', apiKey);
-    localStorage.setItem('st_gong', document.getElementById('gongToggle').checked ? '1' : '0');
-  } catch (e) {}
+    localStorage.setItem('st_room', roomId);
+    localStorage.setItem('st_key',  apiKey);
+    localStorage.setItem('st_gong', gongEnabled ? '1' : '0');
+  } catch(e) {}
 }
 
 function loadConfig() {
   try {
-    const rid = localStorage.getItem('st_room_id');
-    const ak = localStorage.getItem('st_api_key');
-    const gong = localStorage.getItem('st_gong');
-    if (rid) document.getElementById('roomId').value = rid;
-    if (ak) document.getElementById('apiKey').value = ak;
-    if (gong === '1') document.getElementById('gongToggle').checked = true;
-  } catch (e) {}
+    const r = localStorage.getItem('st_room');
+    const k = localStorage.getItem('st_key');
+    const g = localStorage.getItem('st_gong');
+    if (r) document.getElementById('roomId').value = r;
+    if (k) document.getElementById('apiKey').value  = k;
+    if (g === '1') setGong(true);
+  } catch(e) {}
 }
 
-// === API HELPER ===
+// === API ===
 async function apiCall(endpoint, params = {}) {
   const url = new URL(`${API_BASE}/${endpoint}`);
   url.searchParams.set('room_id', roomId);
   url.searchParams.set('api_key', apiKey);
-  for (const [key, val] of Object.entries(params)) {
-    if (val !== undefined && val !== null && val !== '') {
-      url.searchParams.set(key, val);
-    }
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
   }
-  try {
-    const res = await fetch(url.toString());
-    const data = await res.json();
-    if (!data.ok) {
-      throw new Error(data.message || 'Neznámá chyba');
-    }
-    return data;
-  } catch (err) {
-    showToast(err.message || 'Chyba sítě', 'error');
-    throw err;
-  }
+  const res  = await fetch(url.toString());
+  const data = await res.json();
+  if (!data.ok) throw new Error(data.message || 'Chyba API');
+  return data;
 }
 
 // === TOAST ===
-function showToast(message, type = 'info') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.textContent = message;
-  container.appendChild(toast);
-  setTimeout(() => {
-    toast.style.opacity = '0';
-    toast.style.transition = 'opacity 0.3s';
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
+function toast(msg, type = '') {
+  const wrap  = document.getElementById('toastWrap');
+  const el    = document.createElement('div');
+  el.className = 'toast ' + type;
+  el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; setTimeout(() => el.remove(), 300); }, 3000);
 }
 
-// === PŘIPOJENÍ ===
-async function connect() {
-  roomId = document.getElementById('roomId').value.trim();
-  apiKey = document.getElementById('apiKey').value.trim();
-  if (!roomId || !apiKey) {
-    showToast('Vyplňte Room ID i API klíč', 'error');
+// === STATUS UI ===
+function setConnectionStatus(state, text) {
+  const dot   = document.getElementById('statusDot');
+  const label = document.getElementById('statusText');
+  dot.className   = 'status-dot ' + (state === 'connected' ? 'on live' : state === 'error' ? 'err' : '');
+  label.textContent = text;
+}
+
+// === TIMER STATE UI ===
+function applyTimerState(stateKey, remainingMs, progressFraction, timerName, totalMs) {
+  const s = STATE[stateKey] || STATE.idle;
+
+  // hero glow
+  document.getElementById('heroGlow').style.setProperty('--state-color', s.color);
+  document.getElementById('heroGlow').style.background =
+    `radial-gradient(80% 60% at 50% 0%, ${s.color}1c 0%, transparent 70%)`;
+
+  // state pill
+  const ping  = document.getElementById('statePing');
+  const dot   = document.getElementById('stateDotInner');
+  const label = document.getElementById('stateLabel');
+  const dotEl = document.getElementById('stateDot');
+  ping.style.background  = s.color;
+  dot.style.background   = s.color;
+  dot.style.boxShadow    = `0 0 10px ${s.color}`;
+  label.style.color      = s.color;
+  label.textContent      = s.label;
+  dotEl.classList.toggle('animate', s.animate);
+
+  // timer value
+  const tv = document.getElementById('timerValue');
+  tv.textContent  = formatTime(remainingMs);
+  tv.style.color  = s.color;
+
+  // progress bar
+  const fill = document.getElementById('progressFill');
+  fill.style.width      = `${Math.min(Math.max(progressFraction, 0), 1) * 100}%`;
+  fill.style.background = s.color;
+  fill.style.boxShadow  = `0 0 10px ${s.color}88`;
+
+  // progress meta
+  document.getElementById('timerName').textContent     = timerName || '—';
+  document.getElementById('timerDuration').textContent = totalMs > 0 ? 'z ' + formatTime(totalMs) : '—';
+
+  // end time
+  const endEl = document.getElementById('endTimeVal');
+  if (remainingMs > 0) {
+    const end = new Date(Date.now() + remainingMs);
+    endEl.textContent = pad(end.getHours()) + ':' + pad(end.getMinutes());
+  } else {
+    endEl.textContent = '—';
+  }
+
+  // transport button color
+  const sBtn = document.getElementById('startStopBtn');
+  const isRunning = stateKey === 'running' || stateKey === 'wrap';
+  const btnColor  = isRunning ? '#ffb02e' : '#16e08a';
+  sBtn.style.background  = btnColor;
+  sBtn.style.boxShadow   = `0 8px 26px ${btnColor}44`;
+  document.getElementById('playIcon').innerHTML = isRunning
+    ? `<rect x="6" y="4.5" width="4.2" height="15" rx="1.2" fill="#08110c"/><rect x="13.8" y="4.5" width="4.2" height="15" rx="1.2" fill="#08110c"/>`
+    : `<path d="M7 4.5l13 7.5-13 7.5z" fill="#08110c" stroke="#08110c" stroke-width="1.5" stroke-linejoin="round"/>`;
+  document.getElementById('startStopLabel').textContent = isRunning ? 'Pauza' : 'Start';
+}
+
+// === MAIN DISPLAY UPDATE ===
+function updateDisplay() {
+  if (!currentStatus || !currentStatus.timer_id) {
+    applyTimerState('idle', 0, 0, '— Žádný časovač —', 0);
     return;
   }
-  try {
-    await apiCall('test_auth');
-    connected = true;
-    saveConfig();
-    setStatus('connected', 'Připojeno');
-    showToast('Připojeno k Stagetimeru', 'success');
-    await refreshAll();
-    startPolling();
-  } catch (err) {
-    connected = false;
-    setStatus('error', 'Chyba připojení');
+
+  const timer = currentTimers.find(t => t._id === currentStatus.timer_id);
+
+  let remainingMs;
+  if (currentStatus.running) {
+    remainingMs = currentStatus.finish - Date.now();
+  } else {
+    remainingMs = currentStatus.finish - currentStatus.pause;
   }
+
+  const totalMs    = currentStatus.finish - currentStatus.start;
+  const progress   = totalMs > 0 ? 1 - remainingMs / totalMs : 0;
+  const timerName  = timer ? (timer.name || 'Bez názvu') : '…';
+
+  let stateKey = 'idle';
+  if (!currentStatus.running) {
+    stateKey = Math.abs(remainingMs - totalMs) > 50 ? 'paused' : 'idle';
+  } else if (remainingMs <= 0) {
+    stateKey = 'over';
+  } else if (timer && remainingMs <= (timer.wrap_up_yellow || 60) * 1000) {
+    stateKey = 'wrap';
+  } else {
+    stateKey = 'running';
+  }
+
+  applyTimerState(stateKey, remainingMs, progress, timerName, totalMs);
+  handleGong(remainingMs, currentStatus.running);
 }
 
-function setStatus(state, text) {
-  document.getElementById('statusDot').className = `status-dot ${state}`;
-  document.getElementById('statusText').textContent = text;
+// === POLLING ===
+function startPolling() {
+  stopPolling();
+  pollInterval      = setInterval(refreshStatus, 2000);
+  countdownInterval = setInterval(updateDisplay, 250);
 }
-
-// === REFRESH ===
-async function refreshAll() {
-  await Promise.all([refreshStatus(), refreshTimers()]);
+function stopPolling() {
+  clearInterval(pollInterval);
+  clearInterval(countdownInterval);
 }
 
 async function refreshStatus() {
@@ -972,8 +1287,9 @@ async function refreshStatus() {
   try {
     const res = await apiCall('get_status');
     currentStatus = res.data;
-    updateTimerDisplay();
-  } catch (e) {}
+    updateDisplay();
+    renderTimerList();
+  } catch(e) {}
 }
 
 async function refreshTimers() {
@@ -982,114 +1298,204 @@ async function refreshTimers() {
     const res = await apiCall('get_all_timers');
     currentTimers = res.data || [];
     renderTimerList();
-    updateTimerDisplay();
-  } catch (e) {}
+    updateDisplay();
+  } catch(e) {}
 }
 
-// === POLLING ===
-function startPolling() {
-  stopPolling();
-  // Polling get_status každé 2s pro synchronizaci stavu (start/pauza/další)
-  pollInterval = setInterval(refreshStatus, 2000);
-  // Lokální countdown 4× za sekundu pro hladké zobrazení
-  countdownInterval = setInterval(updateTimerDisplay, 250);
+async function refreshAll() {
+  await Promise.all([refreshStatus(), refreshTimers()]);
 }
 
-function stopPolling() {
-  if (pollInterval) clearInterval(pollInterval);
-  if (countdownInterval) clearInterval(countdownInterval);
+// === CONNECT ===
+async function connect() {
+  roomId = document.getElementById('roomId').value.trim();
+  apiKey = document.getElementById('apiKey').value.trim();
+  if (!roomId || !apiKey) { toast('Vyplňte Room ID i API klíč', 'err'); return; }
+  try {
+    await apiCall('test_auth');
+    connected = true;
+    saveConfig();
+    setConnectionStatus('connected', 'Připojeno');
+    toast('Připojeno', 'ok');
+    document.getElementById('configPanel').classList.add('hidden');
+    await refreshAll();
+    startPolling();
+  } catch(err) {
+    connected = false;
+    setConnectionStatus('error', 'Chyba připojení');
+    toast(err.message || 'Chyba připojení', 'err');
+  }
 }
 
-// === DISPLAY ČASOVAČE ===
-function updateTimerDisplay() {
-  const nameEl = document.getElementById('currentTimerName');
-  const valueEl = document.getElementById('timerValue');
-  const stateEl = document.getElementById('timerState');
-  const durEl = document.getElementById('timerDuration');
-
-  if (!currentStatus || !currentStatus.timer_id) {
-    nameEl.textContent = '— Žádný časovač není vybrán —';
-    valueEl.textContent = '00:00:00';
-    valueEl.className = 'timer-value paused';
-    stateEl.textContent = '—';
-    durEl.textContent = '—';
+// === TIMER LIST ===
+function renderTimerList() {
+  const el = document.getElementById('timerList');
+  if (!currentTimers.length) {
+    el.innerHTML = '<div class="empty">Žádné časovače. Klikněte na Přidat.</div>';
     return;
   }
+  const activeId = currentStatus ? currentStatus.timer_id : null;
+  const running  = currentStatus && currentStatus.running;
 
-  const timer = currentTimers.find(t => t._id === currentStatus.timer_id);
-  nameEl.textContent = timer ? (timer.name || 'Bez názvu') : '...';
+  el.innerHTML = currentTimers.map((t, i) => {
+    const isActive  = t._id === activeId;
+    const isRunning = isActive && running;
+    const cls = 'timer-row' + (isRunning ? ' is-running' : isActive ? ' is-active' : '');
+    const dur = formatDuration(t);
+    const sub = [t.speaker, `Časovač ${i+1}/${currentTimers.length}`].filter(Boolean).join(' · ');
+    return `
+    <div class="${cls}" data-id="${t._id}">
+      <div class="timer-idx">${i+1}</div>
+      <div class="timer-row-info">
+        <div class="timer-row-name">${escapeHtml(t.name || 'Bez názvu')}</div>
+        <div class="timer-row-sub">${escapeHtml(sub)}</div>
+      </div>
+      <div class="timer-row-dur">${dur}</div>
+      <div style="display:flex;gap:5px">
+        <button class="icon-btn" data-action="start" title="Spustit">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5l13 7.5-13 7.5z"/></svg>
+        </button>
+        <button class="icon-btn" data-action="edit" title="Upravit">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L18 10l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>
+        </button>
+        <button class="icon-btn del" data-action="delete" title="Smazat">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
 
-  // Výpočet zbývajícího času
-  let remainingMs = 0;
-  if (currentStatus.running) {
-    remainingMs = currentStatus.finish - Date.now();
+  el.querySelectorAll('.timer-row').forEach(row => {
+    const id = row.dataset.id;
+    row.addEventListener('click', async () => {
+      await apiCall('select_timer', { timer_id: id });
+      await refreshStatus();
+    });
+    row.querySelectorAll('.icon-btn').forEach(btn => {
+      btn.addEventListener('click', async e => {
+        e.stopPropagation();
+        const action = btn.dataset.action;
+        if (action === 'start') {
+          await apiCall('start_timer', { timer_id: id });
+          toast('Spuštěno', 'ok');
+          await refreshStatus();
+        } else if (action === 'edit') {
+          const t = currentTimers.find(x => x._id === id);
+          if (t) openEditModal(t);
+        } else if (action === 'delete') {
+          if (confirm('Opravdu smazat?')) {
+            await apiCall('delete_timer', { timer_id: id });
+            toast('Smazáno', 'ok');
+            await refreshTimers();
+          }
+        }
+      });
+    });
+  });
+}
+
+// === OUTPUT LINKS ===
+async function loadOutputLinks() {
+  if (!connected) { toast('Nejprve se připojte', 'err'); return; }
+  try {
+    const res = await apiCall('get_output_links');
+    renderOutputLinks(res.data || []);
+  } catch(e) {}
+}
+
+function renderOutputLinks(links) {
+  const el = document.getElementById('outputLinks');
+  if (!links.length) { el.innerHTML = '<div class="empty">Žádné výstupy.</div>'; return; }
+
+  const filtered = links.filter(l => {
+    const u = (l.url || '').toLowerCase();
+    return !u.includes('/controller') && !u.includes('/operator');
+  });
+  const final = filtered.length ? filtered : links;
+
+  el.innerHTML = final.map(link => {
+    const type = detectLinkType(link.url, link.name);
+    return `
+    <div class="link-row">
+      <div class="link-icon">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 14.5l5-5"/><path d="M8 11l-2 2a3 3 0 0 0 4.2 4.2l2-2"/><path d="M16 13l2-2a3 3 0 0 0-4.2-4.2l-2 2"/></svg>
+      </div>
+      <div class="link-info">
+        <div class="link-name">${escapeHtml(link.name || 'Output')}</div>
+        <div class="link-url">${escapeHtml(link.url || '')}</div>
+      </div>
+      <div class="link-actions">
+        <button class="link-btn" data-url="${escapeHtml(link.url)}" data-action="copy">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h10v11H9z"/><path d="M5 15V4h11"/></svg>
+          Kopírovat
+        </button>
+        <button class="link-btn open-btn" data-url="${escapeHtml(link.url)}" data-action="open">↗</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  el.querySelectorAll('.link-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const url = btn.dataset.url;
+      if (btn.dataset.action === 'copy') {
+        navigator.clipboard.writeText(url).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = url; document.body.appendChild(ta); ta.select();
+          document.execCommand('copy'); document.body.removeChild(ta);
+        });
+        btn.classList.add('copied');
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 6.5"/></svg> Zkopírováno`;
+        setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 9h10v11H9z"/><path d="M5 15V4h11"/></svg> Kopírovat`; }, 1500);
+        toast('URL zkopírována', 'ok');
+      } else {
+        window.open(url, '_blank');
+      }
+    });
+  });
+}
+
+function detectLinkType(url, name) {
+  const u = (url||'').toLowerCase(), n = (name||'').toLowerCase();
+  if (u.includes('/agenda') || n.includes('agenda')) return 'Agenda';
+  if (u.includes('/moderator') || n.includes('moderator')) return 'Moderátor';
+  if (u.includes('/controller')) return 'Controller';
+  if (u.includes('/operator')) return 'Operátor';
+  return 'Viewer';
+}
+
+// === MESSAGES ===
+function updateMsgPreview() {
+  const el = document.getElementById('msgLiveEl');
+  const clearBtn = document.getElementById('clearMsgBtn');
+  if (liveMsgText) {
+    el.className = 'msg-live' + (msgFlash ? ' blink' : '');
+    el.textContent = liveMsgText;
+    clearBtn.style.display = '';
   } else {
-    remainingMs = currentStatus.finish - currentStatus.pause;
+    el.className = 'msg-placeholder';
+    el.textContent = 'Žádná aktivní zpráva';
+    clearBtn.style.display = 'none';
   }
-
-  const totalMs = currentStatus.finish - currentStatus.start;
-  valueEl.textContent = formatTime(remainingMs);
-
-  // Stavy a barvy
-  valueEl.classList.remove('running', 'warning', 'danger', 'paused');
-  if (!currentStatus.running) {
-    valueEl.classList.add('paused');
-    stateEl.textContent = '⏸ Pauza';
-  } else if (remainingMs <= 0) {
-    valueEl.classList.add('danger');
-    stateEl.textContent = '⚠ PŘETEČENO';
-  } else if (timer && remainingMs <= (timer.wrap_up_red || 15) * 1000) {
-    valueEl.classList.add('danger');
-    stateEl.textContent = '▶ Běží';
-  } else if (timer && remainingMs <= (timer.wrap_up_yellow || 60) * 1000) {
-    valueEl.classList.add('warning');
-    stateEl.textContent = '▶ Běží';
-  } else {
-    valueEl.classList.add('running');
-    stateEl.textContent = '▶ Běží';
-  }
-
-  durEl.textContent = formatTime(totalMs);
-
-  // Lokální gong při 0:00
-  handleGong(remainingMs, currentStatus.running);
-
-  // Zvýraznění aktivního v seznamu
-  renderTimerList();
 }
 
-function formatTime(ms) {
-  const neg = ms < 0;
-  let s = Math.abs(Math.floor(ms / 1000));
-  const h = Math.floor(s / 3600);
-  s -= h * 3600;
-  const m = Math.floor(s / 60);
-  s -= m * 60;
-  const pad = n => String(n).padStart(2, '0');
-  return (neg ? '-' : '') + `${pad(h)}:${pad(m)}:${pad(s)}`;
+function setFlash(val) {
+  msgFlash = val;
+  const track = document.getElementById('flashTrack');
+  track.classList.toggle('on', val);
+  updateMsgPreview();
 }
 
-// === GONG (LOKÁLNÍ ZVUK) ===
-function handleGong(remainingMs, running) {
-  const enabled = document.getElementById('gongToggle').checked;
-  if (!enabled || !running) {
-    if (remainingMs > 1000) gongPlayed = false;
-    return;
-  }
-  if (remainingMs <= 0 && remainingMs > -4000 && !gongPlayed) {
-    playGong();
-    gongPlayed = true;
-  }
-  if (remainingMs > 1000) gongPlayed = false;
+function setGong(val) {
+  gongEnabled = val;
+  document.getElementById('gongTrack').classList.toggle('on', val);
+  if (val) initAudioContext();
+  saveConfig();
 }
 
+// === GONG ===
 function initAudioContext() {
-  if (!audioContext) {
-    audioContext = new (window.AudioContext || window.webkitAudioContext)();
-  }
-  if (audioContext.state === 'suspended') {
-    audioContext.resume();
-  }
+  if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioContext.state === 'suspended') audioContext.resume();
   return audioContext;
 }
 
@@ -1098,7 +1504,7 @@ function playGong() {
     const ctx = initAudioContext();
     const now = ctx.currentTime;
     [440, 330, 220].forEach((freq, i) => {
-      const osc = ctx.createOscillator();
+      const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.frequency.value = freq;
       osc.type = 'sine';
@@ -1109,339 +1515,195 @@ function playGong() {
       osc.start(now + i * 0.05);
       osc.stop(now + i * 0.05 + 1.6);
     });
-  } catch (e) {
-    console.error('Gong error', e);
-  }
+  } catch(e) {}
 }
 
-// === SEZNAM ČASOVAČŮ ===
-function renderTimerList() {
-  const listEl = document.getElementById('timerList');
-  if (!currentTimers.length) {
-    listEl.innerHTML = '<div class="empty-state">Žádné časovače. Klikněte na "+ Přidat".</div>';
+function handleGong(remainingMs, running) {
+  if (!gongEnabled || !running) {
+    if (remainingMs > 1000) gongPlayed = false;
     return;
   }
-  const activeId = currentStatus ? currentStatus.timer_id : null;
-  const running = currentStatus && currentStatus.running;
-  listEl.innerHTML = currentTimers.map((t, idx) => {
-    const isActive = t._id === activeId;
-    const isRunning = isActive && running;
-    const classes = ['timer-item'];
-    if (isRunning) classes.push('running');
-    else if (isActive) classes.push('active');
-    const dur = formatDurationFields(t);
-    return `
-      <div class="${classes.join(' ')}" data-timer-id="${t._id}" data-index="${idx + 1}">
-        <div class="timer-item-index">${idx + 1}</div>
-        <div class="timer-item-info">
-          <div class="timer-item-name">${escapeHtml(t.name || 'Bez názvu')}${t.speaker ? ' · ' + escapeHtml(t.speaker) : ''}</div>
-          <div class="timer-item-duration">${dur}</div>
-        </div>
-        <div class="timer-item-actions">
-          <button class="icon-btn" data-action="select" title="Vybrat">⊙</button>
-          <button class="icon-btn" data-action="start" title="Spustit">▶</button>
-          <button class="icon-btn" data-action="edit" title="Upravit">✎</button>
-          <button class="icon-btn delete" data-action="delete" title="Smazat">✕</button>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  // Event listenery
-  listEl.querySelectorAll('.timer-item').forEach(item => {
-    const id = item.dataset.timerId;
-    item.querySelectorAll('.icon-btn').forEach(btn => {
-      btn.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        const action = btn.dataset.action;
-        if (action === 'select') {
-          await apiCall('select_timer', { timer_id: id });
-          showToast('Časovač vybrán');
-        } else if (action === 'start') {
-          await apiCall('start_timer', { timer_id: id });
-          showToast('Časovač spuštěn', 'success');
-        } else if (action === 'edit') {
-          const t = currentTimers.find(x => x._id === id);
-          if (t) openEditModal(t);
-          return;
-        } else if (action === 'delete') {
-          if (confirm('Opravdu smazat tento časovač?')) {
-            await apiCall('delete_timer', { timer_id: id });
-            showToast('Časovač smazán', 'success');
-            await refreshTimers();
-          }
-        }
-        await refreshStatus();
-      });
-    });
-    // Klik na řádek = vybrat
-    item.addEventListener('click', async () => {
-      await apiCall('select_timer', { timer_id: id });
-      await refreshStatus();
-    });
-  });
-}
-
-function formatDurationFields(t) {
-  const h = t.hours || 0, m = t.minutes || 0, s = t.seconds || 0;
-  const pad = n => String(n).padStart(2, '0');
-  return `${pad(h)}:${pad(m)}:${pad(s)}`;
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-
-// === OUTPUT LINKS ===
-async function loadOutputLinks() {
-  if (!connected) {
-    showToast('Nejprve se připojte', 'error');
-    return;
+  if (remainingMs <= 0 && remainingMs > -4000 && !gongPlayed) {
+    playGong();
+    gongPlayed = true;
   }
-  try {
-    const res = await apiCall('get_output_links');
-    renderOutputLinks(res.data || []);
-  } catch (e) {}
+  if (remainingMs > 1000) gongPlayed = false;
 }
 
-function renderOutputLinks(links) {
-  const el = document.getElementById('outputLinks');
-  if (!links.length) {
-    el.innerHTML = '<div class="empty-state">Žádné výstupy nenalezeny.</div>';
-    return;
-  }
-  // Filtrace - hlavně viewer linky
-  const viewerLinks = links.filter(l => {
-    const url = (l.url || '').toLowerCase();
-    return !url.includes('/controller') && !url.includes('/operator');
+// === TABS ===
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
   });
-  const finalLinks = viewerLinks.length ? viewerLinks : links;
+});
 
-  el.innerHTML = finalLinks.map(link => {
-    const type = detectLinkType(link.url, link.name);
-    return `
-      <div class="output-link-item">
-        <div class="output-link-name">${escapeHtml(link.name || 'Output')}</div>
-        <div class="output-link-type">${type}</div>
-        <button class="btn" data-url="${escapeHtml(link.url)}" data-action="copy" style="padding: 6px 12px; font-size: 12px;">📋 Kopírovat</button>
-        <button class="btn btn-info" data-url="${escapeHtml(link.url)}" data-action="open" style="padding: 6px 12px; font-size: 12px;">↗ Otevřít</button>
-      </div>
-    `;
-  }).join('');
-
-  el.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const url = btn.dataset.url;
-      if (btn.dataset.action === 'copy') {
-        navigator.clipboard.writeText(url).then(() => {
-          showToast('URL zkopírována do schránky', 'success');
-        }).catch(() => {
-          // Fallback
-          const ta = document.createElement('textarea');
-          ta.value = url;
-          document.body.appendChild(ta);
-          ta.select();
-          document.execCommand('copy');
-          document.body.removeChild(ta);
-          showToast('URL zkopírována', 'success');
-        });
-      } else if (btn.dataset.action === 'open') {
-        window.open(url, '_blank');
-      }
-    });
-  });
-}
-
-function detectLinkType(url, name) {
-  const u = (url || '').toLowerCase();
-  const n = (name || '').toLowerCase();
-  if (u.includes('/agenda') || n.includes('agenda')) return 'Agenda';
-  if (u.includes('/moderator') || n.includes('moderator')) return 'Moderátor';
-  if (u.includes('/controller')) return 'Controller';
-  if (u.includes('/operator')) return 'Operátor';
-  return 'Viewer';
-}
-
-// === EVENT LISTENERY ===
-document.getElementById('connectBtn').addEventListener('click', connect);
-document.getElementById('refreshBtn').addEventListener('click', refreshAll);
-
+// === TRANSPORT ===
 document.getElementById('startStopBtn').addEventListener('click', async () => {
-  if (!connected) { showToast('Nejprve se připojte', 'error'); return; }
+  if (!connected) { toast('Nejprve se připojte', 'err'); return; }
   await apiCall('start_or_stop');
   await refreshStatus();
 });
-
 document.getElementById('resetBtn').addEventListener('click', async () => {
   if (!connected) return;
   await apiCall('reset');
   await refreshStatus();
 });
-
 document.getElementById('prevBtn').addEventListener('click', async () => {
   if (!connected) return;
   await apiCall('previous');
   await refreshStatus();
 });
-
 document.getElementById('nextBtn').addEventListener('click', async () => {
   if (!connected) return;
   await apiCall('next');
   await refreshStatus();
 });
 
+// === ADJUST ===
 document.querySelectorAll('[data-add]').forEach(btn => {
   btn.addEventListener('click', async () => {
     if (!connected) return;
     const val = btn.dataset.add;
-    const isMinus = val.startsWith('-');
+    const minus = val.startsWith('-');
     const amount = val.replace(/^[+-]/, '');
-    const endpoint = isMinus ? 'subtract_time' : 'add_time';
-    await apiCall(endpoint, { amount });
+    await apiCall(minus ? 'subtract_time' : 'add_time', { amount });
     await refreshStatus();
   });
 });
 
-document.getElementById('gongToggle').addEventListener('change', () => {
-  saveConfig();
-  if (document.getElementById('gongToggle').checked) {
-    initAudioContext();
-  }
+// === CONNECT BTN ===
+document.getElementById('connectBtn').addEventListener('click', connect);
+['roomId', 'apiKey'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => { if (e.key === 'Enter') connect(); });
 });
 
-document.getElementById('testGongBtn').addEventListener('click', () => {
-  playGong();
+// === GONG TOGGLE ===
+document.getElementById('gongToggleWrap').addEventListener('click', () => setGong(!gongEnabled));
+document.getElementById('testGongBtn').addEventListener('click', () => playGong());
+
+// === MSG ===
+document.getElementById('flashToggleWrap').addEventListener('click', () => setFlash(!msgFlash));
+
+document.querySelectorAll('.preset-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.getElementById('msgInput').value = btn.textContent;
+  });
 });
 
-// MODAL pro přidání časovače
-const modal = document.getElementById('addTimerModal');
+document.getElementById('sendMsgBtn').addEventListener('click', () => {
+  const text = document.getElementById('msgInput').value.trim();
+  if (!text) return;
+  liveMsgText = text;
+  updateMsgPreview();
+  document.getElementById('msgInput').value = '';
+  toast('Zpráva zobrazena v náhledu', 'ok');
+});
+
+document.getElementById('msgInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('sendMsgBtn').click();
+});
+
+document.getElementById('clearMsgBtn').addEventListener('click', () => {
+  liveMsgText = null;
+  updateMsgPreview();
+});
+
+// === LINKS ===
+document.getElementById('loadLinksBtn').addEventListener('click', loadOutputLinks);
+
+// === ADD TIMER MODAL ===
+const addModal = document.getElementById('addTimerModal');
 document.getElementById('addTimerBtn').addEventListener('click', () => {
-  if (!connected) { showToast('Nejprve se připojte', 'error'); return; }
-  document.getElementById('newTimerName').value = '';
-  document.getElementById('newTimerHours').value = '0';
+  if (!connected) { toast('Nejprve se připojte', 'err'); return; }
+  document.getElementById('newTimerName').value    = '';
+  document.getElementById('newTimerHours').value   = '0';
   document.getElementById('newTimerMinutes').value = '5';
   document.getElementById('newTimerSeconds').value = '0';
   document.getElementById('newTimerSpeaker').value = '';
-  modal.classList.add('show');
+  addModal.classList.add('show');
   setTimeout(() => document.getElementById('newTimerName').focus(), 50);
 });
-
-document.getElementById('cancelAddBtn').addEventListener('click', () => modal.classList.remove('show'));
-
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) modal.classList.remove('show');
-});
+document.getElementById('cancelAddBtn').addEventListener('click', () => addModal.classList.remove('show'));
+addModal.addEventListener('click', e => { if (e.target === addModal) addModal.classList.remove('show'); });
 
 document.getElementById('confirmAddBtn').addEventListener('click', async () => {
-  const name = document.getElementById('newTimerName').value.trim();
-  const hours = parseInt(document.getElementById('newTimerHours').value) || 0;
+  const name    = document.getElementById('newTimerName').value.trim();
+  const hours   = parseInt(document.getElementById('newTimerHours').value)   || 0;
   const minutes = parseInt(document.getElementById('newTimerMinutes').value) || 0;
   const seconds = parseInt(document.getElementById('newTimerSeconds').value) || 0;
   const speaker = document.getElementById('newTimerSpeaker').value.trim();
-
-  if (hours === 0 && minutes === 0 && seconds === 0) {
-    showToast('Zadejte alespoň nějakou dobu trvání', 'error');
-    return;
-  }
-
+  if (!hours && !minutes && !seconds) { toast('Zadejte dobu trvání', 'err'); return; }
   const params = { hours, minutes, seconds };
-  if (name) params.name = name;
+  if (name)    params.name    = name;
   if (speaker) params.speaker = speaker;
-
   try {
     await apiCall('create_timer', params);
-    showToast('Časovač vytvořen', 'success');
-    modal.classList.remove('show');
+    toast('Časovač vytvořen', 'ok');
+    addModal.classList.remove('show');
     await refreshTimers();
-  } catch (e) {}
+  } catch(e) {}
 });
 
-document.getElementById('loadLinksBtn').addEventListener('click', loadOutputLinks);
-
-// === EDITAČNÍ MODAL ===
+// === EDIT TIMER MODAL ===
 const editModal = document.getElementById('editTimerModal');
-
-function openEditModal(timer) {
-  document.getElementById('editTimerId').value = timer._id;
-  document.getElementById('editTimerName').value = timer.name || '';
-  document.getElementById('editTimerHours').value = timer.hours || 0;
-  document.getElementById('editTimerMinutes').value = timer.minutes || 0;
-  document.getElementById('editTimerSeconds').value = timer.seconds || 0;
-  document.getElementById('editTimerSpeaker').value = timer.speaker || '';
-  document.getElementById('editTimerNotes').value = timer.notes || '';
+function openEditModal(t) {
+  document.getElementById('editTimerId').value      = t._id;
+  document.getElementById('editTimerName').value    = t.name    || '';
+  document.getElementById('editTimerHours').value   = t.hours   || 0;
+  document.getElementById('editTimerMinutes').value = t.minutes || 0;
+  document.getElementById('editTimerSeconds').value = t.seconds || 0;
+  document.getElementById('editTimerSpeaker').value = t.speaker || '';
+  document.getElementById('editTimerNotes').value   = t.notes   || '';
   editModal.classList.add('show');
   setTimeout(() => document.getElementById('editTimerName').focus(), 50);
 }
-
-document.getElementById('cancelEditBtn').addEventListener('click', () => editModal.classList.remove('show'));
-
-editModal.addEventListener('click', (e) => {
-  if (e.target === editModal) editModal.classList.remove('show');
-});
+document.getElementById('cancelEditBtn').addEventListener('click',  () => editModal.classList.remove('show'));
+editModal.addEventListener('click', e => { if (e.target === editModal) editModal.classList.remove('show'); });
 
 document.getElementById('confirmEditBtn').addEventListener('click', async () => {
-  const id = document.getElementById('editTimerId').value;
-  const name = document.getElementById('editTimerName').value.trim();
-  const hours = parseInt(document.getElementById('editTimerHours').value) || 0;
+  const id      = document.getElementById('editTimerId').value;
+  const name    = document.getElementById('editTimerName').value.trim();
+  const hours   = parseInt(document.getElementById('editTimerHours').value)   || 0;
   const minutes = parseInt(document.getElementById('editTimerMinutes').value) || 0;
   const seconds = parseInt(document.getElementById('editTimerSeconds').value) || 0;
   const speaker = document.getElementById('editTimerSpeaker').value.trim();
-  const notes = document.getElementById('editTimerNotes').value.trim();
-
-  if (hours === 0 && minutes === 0 && seconds === 0) {
-    showToast('Zadejte alespoň nějakou dobu trvání', 'error');
-    return;
-  }
-
-  const params = {
-    timer_id: id,
-    name: name || ' ',  // mezera místo prázdného (API by jinak ignorovalo)
-    hours,
-    minutes,
-    seconds,
-    speaker: speaker || ' ',
-    notes: notes || ' '
-  };
-
+  const notes   = document.getElementById('editTimerNotes').value.trim();
+  if (!hours && !minutes && !seconds) { toast('Zadejte dobu trvání', 'err'); return; }
   try {
-    await apiCall('update_timer', params);
-    showToast('Časovač upraven', 'success');
+    await apiCall('update_timer', {
+      timer_id: id,
+      name: name || ' ', hours, minutes, seconds,
+      speaker: speaker || ' ', notes: notes || ' ',
+    });
+    toast('Uloženo', 'ok');
     editModal.classList.remove('show');
     await refreshTimers();
     await refreshStatus();
-  } catch (e) {}
+  } catch(e) {}
 });
 
-// Enter v inputech pro přihlášení
-['roomId', 'apiKey'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') connect();
-  });
-});
-
-// Klávesové zkratky
-document.addEventListener('keydown', (e) => {
+// === KEYBOARD SHORTCUTS ===
+document.addEventListener('keydown', e => {
   if (!connected) return;
   if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  if (e.code === 'Space') { e.preventDefault(); document.getElementById('startStopBtn').click(); }
+  if (e.code === 'Space')                     { e.preventDefault(); document.getElementById('startStopBtn').click(); }
   else if (e.code === 'ArrowRight' && e.shiftKey) { e.preventDefault(); document.getElementById('nextBtn').click(); }
-  else if (e.code === 'ArrowLeft' && e.shiftKey) { e.preventDefault(); document.getElementById('prevBtn').click(); }
-  else if (e.code === 'KeyR' && e.shiftKey) { e.preventDefault(); document.getElementById('resetBtn').click(); }
+  else if (e.code === 'ArrowLeft'  && e.shiftKey) { e.preventDefault(); document.getElementById('prevBtn').click(); }
+  else if (e.code === 'KeyR'       && e.shiftKey) { e.preventDefault(); document.getElementById('resetBtn').click(); }
 });
 
-// === ZAVŘENÍ ===
 window.addEventListener('beforeunload', stopPolling);
 
-// === INICIALIZACE ===
+// === INIT ===
 loadConfig();
 
-// Pokud jsou údaje natvrdo, schovej konfigurační panel a auto-připoj
 if (HARDCODED_ROOM_ID && HARDCODED_API_KEY) {
   document.getElementById('roomId').value = HARDCODED_ROOM_ID;
   document.getElementById('apiKey').value = HARDCODED_API_KEY;
-  document.querySelector('.config-panel').style.display = 'none';
-  // Auto-připojení po načtení DOMu
+  document.getElementById('configPanel').classList.add('hidden');
   connect();
 }
 </script>
