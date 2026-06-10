@@ -1097,6 +1097,7 @@ let gongEnabled = false;
 let audioContext = null;
 let msgFlash = true;
 let liveMsgText = null;
+let currentMessageId = null;
 
 // === STATE COLORS ===
 const STATE = {
@@ -1478,6 +1479,35 @@ function updateMsgPreview() {
   }
 }
 
+async function sendMessageToViewer(text) {
+  if (!connected) { toast('Nejprve se připojte', 'err'); return; }
+  // Skryj případnou předchozí zprávu
+  if (currentMessageId) {
+    try { await apiCall('delete_message', { message_id: currentMessageId }); } catch(e) {}
+    currentMessageId = null;
+  }
+  const color = msgFlash ? 'red' : 'white';
+  try {
+    const res = await apiCall('create_message', { text, color, visible: true });
+    currentMessageId = res.data ? res.data._id : null;
+    liveMsgText = text;
+    updateMsgPreview();
+    toast('Zpráva odeslána na zobrazovač', 'ok');
+  } catch(e) {
+    toast('Chyba odeslání zprávy', 'err');
+  }
+}
+
+async function hideMessageFromViewer() {
+  if (currentMessageId) {
+    try { await apiCall('delete_message', { message_id: currentMessageId }); } catch(e) {}
+    currentMessageId = null;
+  }
+  liveMsgText = null;
+  updateMsgPreview();
+  toast('Zpráva skryta', 'ok');
+}
+
 function setFlash(val) {
   msgFlash = val;
   const track = document.getElementById('flashTrack');
@@ -1593,22 +1623,19 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
   });
 });
 
-document.getElementById('sendMsgBtn').addEventListener('click', () => {
+document.getElementById('sendMsgBtn').addEventListener('click', async () => {
   const text = document.getElementById('msgInput').value.trim();
   if (!text) return;
-  liveMsgText = text;
-  updateMsgPreview();
   document.getElementById('msgInput').value = '';
-  toast('Zpráva zobrazena v náhledu', 'ok');
+  await sendMessageToViewer(text);
 });
 
 document.getElementById('msgInput').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('sendMsgBtn').click();
 });
 
-document.getElementById('clearMsgBtn').addEventListener('click', () => {
-  liveMsgText = null;
-  updateMsgPreview();
+document.getElementById('clearMsgBtn').addEventListener('click', async () => {
+  await hideMessageFromViewer();
 });
 
 // === LINKS ===
